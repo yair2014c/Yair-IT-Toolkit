@@ -23,5 +23,4 @@ try {
 }
 
 Write-Host "`n==========================================" -ForegroundColor Cyan
-Write-Host "Press any key to close..."
 pause > $null
