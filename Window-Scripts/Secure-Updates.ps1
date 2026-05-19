@@ -4,11 +4,14 @@ Write-Host "`n$Line" -ForegroundColor Cyan
 Write-Host "       WINDOWS SECURE UPDATE TOOLKIT (NATIVE)" -ForegroundColor Cyan
 Write-Host "$Line`n" -ForegroundColor Cyan
 
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "[!] ERROR: PLEASE RUN AS ADMINISTRATOR." -ForegroundColor Red
-    pause; exit
-}
+$currentUser = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+$isAdmin = $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
+if (-not $isAdmin) {
+    Write-Host "Restarting script with administrator rights..." -ForegroundColor Yellow
+    Start-Process powershell.exe -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    exit
+}
 Write-Host "[*] STEP 1: Creating System Restore Point..." -ForegroundColor Yellow
 Checkpoint-Computer -Description "BeforeSecureUpdate" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue
 
