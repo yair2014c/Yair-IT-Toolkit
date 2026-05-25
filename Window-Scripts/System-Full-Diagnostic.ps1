@@ -69,6 +69,44 @@ try {
     $results.Add([PSCustomObject]@{ Component = "Disk SMART"; Status = "WARN"; Details = "Could not collect SMART data"; Fix = "Check WMI service status." })
 }
 
+if ($chassisType -eq "Laptop") {
+    $reportPath = "$env:TEMP\batt_triage.html"
+    powercfg /batteryreport /output $reportPath > $null
+    
+    if (Test-Path $reportPath) {
+        $html = Get-Content $reportPath -Raw
+        Remove-Item $reportPath -Force
+        
+        $batterySection = if ($html -match 'Installed batteries([\s\S]*?)Recent usage') { $Matches[1] } else { $html }
+        
+        $designCap = 0
+        $fullCap = 0
+        
+        if ($batterySection -match 'DESIGN CAPACITY[\s\S]*?([\d,]+)\s*mWh') { $designCap = [int]($Matches[1] -replace '[^\d]','') }
+        if ($batterySection -match 'FULL CHARGE CAPACITY[\s\S]*?([\d,]+)\s*mWh') { $fullCap = [int]($Matches[1] -replace '[^\d]','') }
+        
+        if ($designCap -gt 0 -and $fullCap -gt 0) {
+            $battHealth = [math]::Round(($fullCap / $designCap) * 100, 1)
+            $battWin = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue
+            $charge = if ($battWin) { $battWin.EstimatedChargeRemaining } else { 100 }
+            
+            $details = "Health: $battHealth% (Design: $designCap mWh | Full: $fullCap mWh) | Charge: $charge%"
+            
+            if ($battHealth -lt 60) {
+                $results.Add([PSCustomObject]@{ Component = "Battery Health"; Status = "FAIL"; Details = $details; Fix = "Severe degradation. Replace the battery to avoid sudden shutdowns." })
+            } elseif ($battHealth -lt 80) {
+                $results.Add([PSCustomObject]@{ Component = "Battery Health"; Status = "WARN"; Details = $details; Fix = "Battery capacity is dropping. Runtime will be reduced." })
+            } else {
+                $results.Add([PSCustomObject]@{ Component = "Battery Health"; Status = "OK"; Details = $details; Fix = "" })
+            }
+        } else {
+            $results.Add([PSCustomObject]@{ Component = "Battery Health"; Status = "WARN"; Details = "Unable to parse report metrics"; Fix = "Run powercfg /batteryreport manually to inspect." })
+        }
+    } else {
+        $results.Add([PSCustomObject]@{ Component = "Battery Health"; Status = "WARN"; Details = "Failed to generate report"; Fix = "Check powercfg utility availability." })
+    }
+}
+
 try {
     $defender = Get-MpComputerStatus -ErrorAction Stop
     if (-not $defender.RealTimeProtectionEnabled) {
