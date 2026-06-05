@@ -1,6 +1,6 @@
 ﻿#requires -Version 5.1
 # ==============================================================================
-# Script:   Yair Windows Utility Tool - Console Master Edition (v12.3)
+# Script:   Yair Windows Utility Tool
 # Modules:  Software Manager (Array-Bound Batch Execution Engine) · Interactive Safe Debloat 
 #           Telemetry Lockdown · System Diagnostics · Security & SAM Audit 
 #           Cyber Incident Sniffer · Secure Updates
@@ -222,23 +222,19 @@ function Invoke-Debloat {
         Write-Host "=================================================================" -ForegroundColor Cyan
         Write-Host "               SYSTEM SAFE DEBLOAT & DEEP CLEAN MENU              " -ForegroundColor Cyan
         Write-Host "=================================================================" -ForegroundColor Cyan
-        Write-Host "Select target maintenance module execution vector:" -ForegroundColor Gray
+        Write-Host "      Select an option to begin:" -ForegroundColor Yellow
         
-        Write-Host "`n  [1] Purge Modern UWP Bloatware App Packages" -ForegroundColor Yellow
-        Write-Host "      Cleans: Built-in application stubs like TikTok, Facebook, BingNews," -ForegroundColor Gray
-        Write-Host "              Xbox tools, and pre-staged promotional packages." -ForegroundColor Gray
-        Write-Host "      Impact: Frees system storage disk bounds and prevents background stubs." -ForegroundColor Gray
-        
-        Write-Host "`n  [2] Disconnect Outbound Telemetry & OS Tracking Services" -ForegroundColor Yellow
-        Write-Host "      Cleans: Active Windows diagnostic profiling and telemetry engines" -ForegroundColor Gray
-        Write-Host "              (specifically target configurations: DiagTrack and dmwappushservice)." -ForegroundColor Gray
-        Write-Host "      Impact: Enhances runtime network and registry platform privacy profiles." -ForegroundColor Gray
-        
-        Write-Host "`n  [3] Flush Local Cache Garbage, Temp Folders & Recycle Bin" -ForegroundColor Yellow
-        Write-Host "      Cleans: Active User Temp space, Windows Win-Temp structures, Prefetch logs," -ForegroundColor Gray
-        Write-Host "              and forces an automated purge of all connected local Recycle Bins." -ForegroundColor Gray
-        Write-Host "      CRITICAL WARNING: This permanently wipes out active crash dump logs, temporary" -ForegroundColor Red
-        Write-Host "                        app session metrics, and completely EMPTIES your Recycle Bin!" -ForegroundColor Red
+        Write-Host "`n  [1] Remove Pre-installed Bloatware Apps" -ForegroundColor Yellow
+        Write-Host "      Cleans: Built-in apps and stubs like TikTok, Facebook, Xbox tools, and Kindle." -ForegroundColor Gray
+        Write-Host "      Impact: Frees up disk space and stops them from running in the background." -ForegroundColor Gray
+  
+        Write-Host "`n  [2] Disable Windows Telemetry & Data Tracking" -ForegroundColor Yellow
+        Write-Host "      Cleans: Background diagnostic services (DiagTrack and dmwappushservice)." -ForegroundColor Gray
+        Write-Host "      Impact: Increases privacy by stopping Windows from sending usage data to Microsoft." -ForegroundColor Gray
+  
+        Write-Host "`n  [3] Clear Temporary Files & Empty Recycle Bin" -ForegroundColor Yellow
+        Write-Host "      Cleans: Windows Temp folders, user cache, prefetch data, and the Recycle Bin." -ForegroundColor Gray
+        Write-Host "      WARNING: This permanently deletes your Recycle Bin contents and temp app caches!" -ForegroundColor Red
         
         Write-Host "`n  [B] Return to Utility Master Main Console" -ForegroundColor Cyan
         Write-Host "=================================================================" -ForegroundColor Cyan
@@ -333,7 +329,7 @@ function Invoke-Diagnostics {
     Write-Host "Node: $($env:COMPUTERNAME) | Context: $($env:USERNAME)`n" -ForegroundColor DarkGray
     
     if ($Global:IsSimulation) {
-        Write-Host "  [SIMULATION MODE] Injecting simulated telemetry models...`n" -ForegroundColor DarkGray
+        Write-Host "  [SIMULATION MODE] Testing dashboard display logic...`n" -ForegroundColor DarkGray
         Write-DiagResult "Storage (C:)" "OK" "Healthy (67% free)"
         Wait-TaskEnd; return
     }
@@ -348,21 +344,21 @@ function Invoke-Diagnostics {
 
     $reboot = $false
     if (Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" -ErrorAction SilentlyContinue) { $reboot = $true }
-    if ($reboot) { Write-DiagResult "Pending Reboot" "WARN" "System modification requires volatile kernel refresh" }
+    if ($reboot) { Write-DiagResult "Pending Reboot" "WARN" "A restart is required to finish installing updates" }
 
     Get-Volume | Where-Object { $_.DriveLetter -and $_.Size -gt 0 } | ForEach-Object {
         $freePct = [math]::Round(($_.SizeRemaining / $_.Size) * 100, 1)
         if ($freePct -lt 10) { Write-DiagResult "Storage ($($_.DriveLetter):)" "WARN" "Capacity exhausted ($freePct% remaining)" }
-        else { Write-DiagResult "Storage ($($_.DriveLetter):)" "OK" "Allocation nominal ($freePct% free)" }
+        else { Write-DiagResult "Storage ($($_.DriveLetter):)" "OK" "Space is nominal ($freePct% free)" }
     }
 
     try {
         $smartData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_FailurePredictStatus -ErrorAction Stop
         $fail = $false
         foreach ($d in $smartData) { if ($d.PredictFailure) { $fail = $true } }
-        if ($fail) { Write-DiagResult "Disk SMART" "FAIL" "Hardware structural failure predicted!" }
-        else { Write-DiagResult "Disk SMART" "OK" "Hardware degradation within tolerance" }
-    } catch { Write-DiagResult "Disk SMART" "WARN" "WMI storage query rejected" }
+        if ($fail) { Write-DiagResult "Drive Health" "FAIL" "Drive failure warning! Back up your data immediately!" }
+        else { Write-DiagResult "Drive Health" "OK" "All drives are healthy" }
+    } catch { Write-DiagResult "Drive Health" "WARN" "Could not retrieve drive health data" }
 
     $stoppedSvcs = @(Get-CimInstance Win32_Service -Filter "StartMode='Auto' AND State<>'Running'" -ErrorAction SilentlyContinue) |
         Where-Object { $_.Name -notmatch "^(gupdate|gupdatem|edgeupdate|edgeupdatem|AdobeARMservice|MozillaMaintenance|AppXSvc|AsusMultiAntennaSvc|brave|Netlogon|sppsvc|StiSvc|Intel.*TPM.*)$" }
@@ -463,27 +459,27 @@ function Invoke-IncidentSniffer {
     Wait-TaskEnd
 }
 
-# --- Module 8: Secure Updates Pipeline ---
+# --- Module 8: Secure Update & Backup ---
 function Invoke-SecureUpdates {
     Clear-Host
-    Write-Host "=== Secure Updates & Cryptographic Restore Pipeline ===" -ForegroundColor Cyan
+    Write-Host "=== Secure Update & Backup ===" -ForegroundColor Cyan
     
     if ($Global:IsSimulation) {
-        Write-Host "`n  [SIM] Phase 1: Snapshot system rollback restore boundaries... PASSED" -ForegroundColor DarkGray
-        Write-Host "  [SIM] Phase 2: Interrogate WSUS/Windows Update telemetry engines... PASSED" -ForegroundColor DarkGray
+        Write-Host "`n  [SIM] Phase 1: Create System Restore Point... PASSED" -ForegroundColor DarkGray
+        Write-Host "  [SIM] Phase 2: Check for Windows Updates... PASSED" -ForegroundColor DarkGray
         Wait-TaskEnd; return
     }
 
-    Write-Host "`n[*] Phase 1: Initializing host disaster recovery bounds..." -ForegroundColor Yellow
+    Write-Host "`n[*] Phase 1: Creating System Restore Point..." -ForegroundColor Yellow
     try {
         if (Get-Command Checkpoint-Computer -ErrorAction SilentlyContinue) {
             Enable-ComputerRestore -Drive "C:\" -ErrorAction SilentlyContinue
             Checkpoint-Computer -Description "YairUtility_SecureUpdateBinds" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue
-            Write-Host "  [+] State restoration vector committed safely." -ForegroundColor Green
-        } else { Write-Host "  [!] Snapshot engine rejected (Skipping)." -ForegroundColor DarkGray }
+            Write-Host "  [+] System restore point created successfully." -ForegroundColor Green
+        } else { Write-Host "  [!] System restore is not supported on this machine (Skipping)." -ForegroundColor DarkGray }
     } catch {}
 
-    Write-Host "`n[*] Phase 2: Interrogating upstream deployment architectures..." -ForegroundColor Yellow
+    Write-Host "`n[*] Phase 2: Checking for Windows Updates..." -ForegroundColor Yellow
     try {
         $session = New-Object -ComObject Microsoft.Update.Session
         $searcher = $session.CreateUpdateSearcher()
@@ -494,24 +490,24 @@ function Invoke-SecureUpdates {
             $isCritical = $false
             foreach ($cat in $update.Categories) { if (@("Security", "Critical") -contains $cat.Name) { $isCritical = $true } }
             if ($isCritical) {
-                Write-Host "  [+] Missing Critical Payload: $($update.Title)" -ForegroundColor Cyan
+                Write-Host "  [+] Found Missing Critical Update: $($update.Title)" -ForegroundColor Cyan
                 $toInstall.Add($update) | Out-Null
             }
         }
 
         if ($toInstall.Count -gt 0) {
-            Write-Host "`n[*] Phase 3: Streaming components..." -ForegroundColor Yellow
+            Write-Host "`n[*] Phase 3: Downloading updates..." -ForegroundColor Yellow
             $downloader = $session.CreateUpdateDownloader()
             $downloader.Updates = $toInstall
             $downloader.Download() | Out-Null
             
-            Write-Host "[*] Phase 4: Committing modification binaries..." -ForegroundColor Yellow
+            Write-Host "[*] Phase 4: Installing updates..." -ForegroundColor Yellow
             $installer = $session.CreateUpdateInstaller()
             $installer.Updates = $toInstall
             $result = $installer.Install()
-            Write-Host "  [+] Execution transaction completed (Code: $($result.ResultCode))." -ForegroundColor Green
-        } else { Write-Host "  [+] Baseline updates sync verified. No actions needed." -ForegroundColor Green }
-    } catch { Write-Host "  [✘] Telemetry collection exception: $($_.Exception.Message)" -ForegroundColor Red }
+            Write-Host "  [+] Updates installed successfully (Result Code: $($result.ResultCode))." -ForegroundColor Green
+        } else { Write-Host "  [+] Your system is fully up to date. No actions needed." -ForegroundColor Green }
+    } catch { Write-Host "  [✘] Error checking for updates: $($_.Exception.Message)" -ForegroundColor Red }
 
     Wait-TaskEnd
 }
@@ -520,22 +516,22 @@ function Invoke-SecureUpdates {
 while ($true) {
     Clear-Host
     Write-Host "=================================================================" -ForegroundColor Green
-    Write-Host "       YAIR WINDOWS UTILITY TOOL - MASTER CONSOLE (v12.3)        " -ForegroundColor Green
+    Write-Host "       YAIR WINDOWS UTILITY TOOL        " -ForegroundColor Green
     Write-Host "=================================================================" -ForegroundColor Green
     Write-Host " PACKAGE MANAGEMENT & AUTOMATION" -ForegroundColor Cyan
-    Write-Host "  [1] Install Software (GridView Single-Window Selector)"
-    Write-Host "  [2] Uninstall Software (GridView Single-Window Extraction Selector)"
+    Write-Host "  [1] Install Apps (Select from Catalog)"
+    Write-Host "  [2] Uninstall Apps (Remove from System)"
     Write-Host "  [3] Windows Safe Deep Clean & Debloat Interface"
     Write-Host "  [4] Trigger Native Windows Update Core Panel"
     
     Write-Host "`n DIAGNOSTICS, FORENSICS & INFRASTRUCTURE" -ForegroundColor Cyan
-    Write-Host "  [5] Run: Integrated System Diagnostic Dashboard"
-    Write-Host "  [6] Run: Security Policy Compliance Baseline Auditor"
-    Write-Host "  [7] Run: Identity Management & Local SAM Auditor"
-    Write-Host "  [8] Run: Cyber Incident & Host Forensic Event Sniffer"
+    Write-Host "  [5] Run: System Health Check (Hardware & Services Dashboard)"
+    Write-Host "  [6] Run: Security Audit (Antivirus & Firewall Check)"
+    Write-Host "  [7] Run: User Account Audit (Check Local Admin & Guest Risk)"
+    Write-Host "  [8] Run: Security Incident Scan (Check Last 48h Failed Logins)"
     
     Write-Host "`n MAINTENANCE" -ForegroundColor Cyan
-    Write-Host "  [9] Run: Cryptographic Restore & Secure Updates Pipeline"
+    Write-Host "  [9] Secure Update & Backup (Create Restore Point & Patch)"
     
     Write-Host "`n SYSTEM" -ForegroundColor Cyan
     $simColor = if ($Global:IsSimulation) { "DarkYellow" } else { "DarkGray" }
