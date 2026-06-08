@@ -100,8 +100,6 @@ function Install-Winget {
         return $true
     }
     catch {
-        Write-Host "    [✘] Failed to install winget: $_" -ForegroundColor Red
-        Write-Host "    [!] Manual installation required: https://github.com/microsoft/winget-cli/releases" -ForegroundColor Yellow
         return $false
     }
 }
@@ -120,10 +118,6 @@ function Update-Winget {
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host "    [✓] Winget updated successfully" -ForegroundColor Green
-            
-            # Get current version
-            $version = & winget --version 2>&1
-            Write-Host "    [+] Current version: $version" -ForegroundColor Cyan
             return $true
         }
         else {
@@ -132,7 +126,6 @@ function Update-Winget {
         }
     }
     catch {
-        Write-Host "    [!] Could not update winget: $_" -ForegroundColor Yellow
         return $true  # Don't fail, just continue
     }
 }
@@ -140,7 +133,7 @@ function Update-Winget {
 function Assert-Winget {
     <#
     .SYNOPSIS
-        Ensures winget is installed and updated
+        Ensures winget is installed, updated, and not blocked by the system.
     #>
     Write-Host "`n╔═════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "║        WINGET VALIDATION SEQUENCE        ║" -ForegroundColor Cyan
@@ -154,21 +147,26 @@ function Assert-Winget {
     else {
         Write-Host "      [✘] Winget not found, attempting installation..." -ForegroundColor Yellow
         if (-not (Install-Winget)) {
-            Write-Host "`n[ERROR] Failed to install winget!" -ForegroundColor Red
-            Read-Host "Press Enter to continue"
+            Write-Host "`n[!] CRITICAL ERROR: Failed to install Winget." -ForegroundColor Red
+            Write-Host "[!] Something stopped the operation from working." -ForegroundColor Yellow
+            Write-Host "[i] FIX: Use the Winget repair script from the IT-toolkits repository, or check the README for manual setup instructions." -ForegroundColor Cyan
+            Read-Host "Press Enter to return to the main menu"
             return $false
         }
     }
     
-    # Step 2: Verify it's working
+    # Step 2: Verify functionality and look for blocks/certificate errors
     Write-Host "`n[2/3] Verifying winget functionality..." -ForegroundColor Yellow
     try {
         $version = & winget --version 2>&1
+        if ($LASTEXITCODE -ne 0) { throw "Winget returned a non-zero exit code." }
         Write-Host "      [✓] Winget version: $version" -ForegroundColor Green
     }
     catch {
-        Write-Host "      [✘] Winget is not functional: $_" -ForegroundColor Red
-        Read-Host "Press Enter to continue"
+        Write-Host "`n[!] CRITICAL ERROR: Winget execution was blocked or failed." -ForegroundColor Red
+        Write-Host "[!] Something stopped the operation from working. This is usually caused by Windows security policies or certificate errors." -ForegroundColor Yellow
+        Write-Host "[i] FIX: Use the Winget repair script from the IT-toolkits repository, or check the README for troubleshooting steps." -ForegroundColor Cyan
+        Read-Host "Press Enter to return to the main menu"
         return $false
     }
     
@@ -177,7 +175,7 @@ function Assert-Winget {
     Update-Winget | Out-Null
     
     Write-Host "`n[✓] Winget is ready to use!" -ForegroundColor Green
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
     return $true
 }
 
@@ -255,7 +253,7 @@ $SoftwarePackages = @(
     
     # 💬 Communication
     [PSCustomObject]@{Category="💬 Communication"; Name="Discord"; Process="Discord"; Note="Voice, video, and text communication platform"; ID="Discord.Discord"}
-    [PSCustomObject]@{Category="💬 Communication"; Name="WhatsApp"; Process="WhatsApp"; Note="Official WhatsApp desktop client"; ID="WhatsApp.WhatsApp"}
+    [PSCustomObject]@{Category="💬 Communication"; Name="WhatsApp"; Process="WhatsApp"; Note="Official WhatsApp desktop client"; ID="9NKSQCEZKVDQ"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Telegram"; Process="Telegram"; Note="Fast and secure desktop messaging client"; ID="Telegram.TelegramDesktop"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Microsoft Teams"; Process="Teams"; Note="Corporate collaboration and video meetings hub"; ID="Microsoft.Teams"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Slack"; Process="slack"; Note="Team communication and workspace platform"; ID="SlackTechnologies.Slack"}
@@ -264,7 +262,7 @@ $SoftwarePackages = @(
     
     # 🎵 Music
     [PSCustomObject]@{Category="🎵 Music"; Name="Spotify"; Process="Spotify"; Note="Digital music streaming service application"; ID="Spotify.Spotify"}
-    [PSCustomObject]@{Category="🎵 Music"; Name="Apple Music"; Process="AppleMusic"; Note="Official Apple Music native client"; ID="Apple.AppleMusic"}
+    [PSCustomObject]@{Category="🎵 Music"; Name="Apple Music"; Process="AppleMusic"; Note="Official Apple Music native client"; ID="9PFHDD62MXS1"}
     
     # 🎮 Gaming
     [PSCustomObject]@{Category="🎮 Gaming"; Name="Steam"; Process="steam"; Note="Digital distribution storefront for PC gaming"; ID="Valve.Steam"}
@@ -281,6 +279,8 @@ function Wait-TaskEnd {
 
 # --- Module 1 & 2: Software Selection & Single Window Batch Execution ---
 function Manage-Software([string]$Action) {
+    # If Assert-Winget fails, it drops an error and returns $false.
+    # The UI screen will NOT open, and it routes safely back to the menu.
     if (-not (Assert-Winget)) { 
         return 
     }
@@ -328,7 +328,7 @@ function Manage-Software([string]$Action) {
         
         if ($Action -eq "Install") {
             $PayloadCommands += "Write-Host '`n>>> DEPLOYING COMPONENT: $AppName <<<' -ForegroundColor Cyan"
-            $PayloadCommands += "winget install --id '$AppID' --exact --force --include-unknown --accept-package-agreements --accept-source-agreements 2>&1"
+            $PayloadCommands += "winget install --id '$AppID' --force --include-unknown --accept-package-agreements --accept-source-agreements 2>&1"
         } 
         else {
             if ($ProcName) {
@@ -349,7 +349,7 @@ if (`$procs) {
 "@
             }
             $PayloadCommands += "Write-Host '`n>>> EXTRACTING COMPONENT: $AppName <<<' -ForegroundColor DarkYellow"
-            $PayloadCommands += "winget uninstall --id '$AppID' --exact --force 2>&1"
+            $PayloadCommands += "winget uninstall --id '$AppID' --force 2>&1"
         }
     }
     
