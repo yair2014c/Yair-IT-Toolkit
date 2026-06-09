@@ -14,5 +14,5 @@ if %errorLevel% == 0 (
 :RunPowerShell
 cd /d "%~dp0"
 :: Launch the PowerShell script with strict execution policy bypass
-powershell -NoProfile -ExecutionPolicy Bypass -File "Winget-Fix-win10.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "Winget-SoftwareInstaller-Fix.ps1"
 exit /b

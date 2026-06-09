@@ -16,7 +16,6 @@ echo.
 WINGET SETTINGS --ENABLE BypassCertificatePinningForMicrosoftStore
 WINGET UPGRADE Microsoft.AppInstaller --accept-source-agreements --accept-package-agreements
 WINGET SETTINGS --DISABLE BypassCertificatePinningForMicrosoftStore
-WINGET UPGRADE --all --include-unknown --accept-source-agreements --accept-package-agreements
 
 echo.
 echo Fix complete! Press any key to exit.

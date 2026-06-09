@@ -1,6 +1,6 @@
 ﻿#requires -Version 5.1
 # ==============================================================================
-# Script:   Yair Windows Utility Tool
+# Script:   Yair Windows Utility Tool - FIXED & ENHANCED
 # Modules:  Software Manager (Array-Bound Batch Execution Engine) · Interactive Safe Debloat 
 #           Telemetry Lockdown · System Diagnostics · Security & SAM Audit 
 #           Cyber Incident Sniffer · Secure Updates
@@ -35,6 +35,150 @@ elseif ($currentPolicy -ne "Bypass") {
 # --- Global State ---
 $Global:IsSimulation = $false
 
+# ==============================================================================
+# WINGET MANAGEMENT FUNCTIONS
+# ==============================================================================
+
+function Test-WingetInstalled {
+    <#
+    .SYNOPSIS
+        Tests if winget is installed and available
+    #>
+    try {
+        $version = & winget --version 2>&1
+        if ($LASTEXITCODE -eq 0 -and $version) {
+            return $true
+        }
+    }
+    catch {
+        return $false
+    }
+    return $false
+}
+
+function Install-Winget {
+    <#
+    .SYNOPSIS
+        Automatically installs or enables winget
+    #>
+    Write-Host "`n[*] Winget not found. Attempting installation..." -ForegroundColor Yellow
+    
+    try {
+        # Method 1: Check if it's in AppX and just needs to be added to PATH
+        $appxPackages = Get-AppxPackage -Name "Microsoft.DesktopAppInstaller" -ErrorAction SilentlyContinue
+        
+        if ($appxPackages) {
+            Write-Host "    [+] Winget AppX package found, refreshing PATH..." -ForegroundColor Green
+            $env:Path += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
+            
+            # Verify it's now available
+            $version = & winget --version 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "    [✓] Winget is now available: $version" -ForegroundColor Green
+                return $true
+            }
+        }
+        
+        # Method 2: Install from Microsoft Store (requires internet)
+        Write-Host "    [*] Installing from Microsoft Store (requires internet)..." -ForegroundColor Yellow
+        $ProgressPreference = 'SilentlyContinue'
+        
+        # Download installer from GitHub releases
+        $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+        $wingetPath = "$env:TEMP\winget.msixbundle"
+        
+        Write-Host "    [*] Downloading winget installer..." -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath -ErrorAction Stop
+        
+        Write-Host "    [*] Installing winget package..." -ForegroundColor Cyan
+        Add-AppxPackage -Path $wingetPath -ErrorAction Stop
+        
+        # Cleanup
+        Remove-Item $wingetPath -Force -ErrorAction SilentlyContinue
+        
+        Write-Host "    [✓] Winget installed successfully!" -ForegroundColor Green
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+function Update-Winget {
+    <#
+    .SYNOPSIS
+        Updates winget to the latest version
+    #>
+    Write-Host "`n[*] Checking for winget updates..." -ForegroundColor Yellow
+    
+    try {
+        # Attempt self-update
+        Write-Host "    [*] Running: winget upgrade Microsoft.Winget" -ForegroundColor Cyan
+        & winget upgrade Microsoft.Winget --accept-source-agreements --accept-package-agreements 2>&1 | ForEach-Object { Write-Host "      $_" -ForegroundColor Gray }
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "    [✓] Winget updated successfully" -ForegroundColor Green
+            return $true
+        }
+        else {
+            Write-Host "    [!] No updates available or update skipped" -ForegroundColor DarkGray
+            return $true
+        }
+    }
+    catch {
+        return $true  # Don't fail, just continue
+    }
+}
+
+function Assert-Winget {
+    <#
+    .SYNOPSIS
+        Ensures winget is installed, updated, and not blocked by the system.
+    #>
+    Write-Host "`n╔═════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║        WINGET VALIDATION SEQUENCE        ║" -ForegroundColor Cyan
+    Write-Host "╚═════════════════════════════════════════╝" -ForegroundColor Cyan
+    
+    # Step 1: Check if installed
+    Write-Host "`n[1/3] Checking winget installation..." -ForegroundColor Yellow
+    if (Test-WingetInstalled) {
+        Write-Host "      [✓] Winget is installed" -ForegroundColor Green
+    }
+    else {
+        Write-Host "      [✘] Winget not found, attempting installation..." -ForegroundColor Yellow
+        if (-not (Install-Winget)) {
+            Write-Host "`n[!] CRITICAL ERROR: Failed to install Winget." -ForegroundColor Red
+            Write-Host "[!] Something stopped the operation from working." -ForegroundColor Yellow
+            Write-Host "[i] FIX: Use the Winget repair script from the IT-toolkits repository, or check the README for manual setup instructions." -ForegroundColor Cyan
+            Read-Host "Press Enter to return to the main menu"
+            return $false
+        }
+    }
+    
+    # Step 2: Verify functionality and look for blocks/certificate errors
+    Write-Host "`n[2/3] Verifying winget functionality..." -ForegroundColor Yellow
+    try {
+        $version = & winget --version 2>&1
+        if ($LASTEXITCODE -ne 0) { throw "Winget returned a non-zero exit code." }
+        Write-Host "      [✓] Winget version: $version" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "`n[!] CRITICAL ERROR: Winget execution was blocked or failed." -ForegroundColor Red
+        Write-Host "[!] Something stopped the operation from working. This is usually caused by Windows security policies or certificate errors." -ForegroundColor Yellow
+        Write-Host "[i] FIX: Use the Winget repair script from the IT-toolkits repository, or check the README for troubleshooting steps." -ForegroundColor Cyan
+        Read-Host "Press Enter to return to the main menu"
+        return $false
+    }
+    
+    # Step 3: Update winget
+    Write-Host "`n[3/3] Updating winget to latest version..." -ForegroundColor Yellow
+    Update-Winget | Out-Null
+    
+    Write-Host "`n[✓] Winget is ready to use!" -ForegroundColor Green
+    Start-Sleep -Seconds 1
+    return $true
+}
+
 # --- Consolidated Master Software Catalog ---
 $SoftwarePackages = @(
     # 🌐 Browsers
@@ -45,7 +189,7 @@ $SoftwarePackages = @(
     [PSCustomObject]@{Category="🌐 Browsers"; Name="Tor Browser"; Process="firefox"; Note="Anonymity-focused onion routing browser"; ID="TorProject.TorBrowser"}
     [PSCustomObject]@{Category="🌐 Browsers"; Name="Microsoft Edge"; Process="msedge"; Note="Enterprise chromium-based browser by Microsoft"; ID="Microsoft.Edge"}
     [PSCustomObject]@{Category="🌐 Browsers"; Name="Opera Browser"; Process="opera"; Note="Feature-rich browser with built-in utilities"; ID="Opera.Opera"}
-    [PSCustomObject]@{Category="🌐 Browsers"; Name="Vivaldi"; Process="vivaldi"; Note="Highly customizable power-user browser"; ID="VivaldiTechnologies.Vivaldi"}
+    [PSCustomObject]@{Category="🌐 Browsers"; Name="Vivaldi"; Process="vivaldi"; Note="Highly customizable power-user browser"; ID="Vivaldi.Vivaldi"}    
     
     # 🔒 Security
     [PSCustomObject]@{Category="🔒 Security"; Name="Bitwarden"; Process="Bitwarden"; Note="Open-source cloud password manager"; ID="Bitwarden.Bitwarden"}
@@ -109,7 +253,6 @@ $SoftwarePackages = @(
     
     # 💬 Communication
     [PSCustomObject]@{Category="💬 Communication"; Name="Discord"; Process="Discord"; Note="Voice, video, and text communication platform"; ID="Discord.Discord"}
-    [PSCustomObject]@{Category="💬 Communication"; Name="WhatsApp"; Process="WhatsApp"; Note="Official WhatsApp desktop client"; ID="WhatsApp.WhatsApp"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Telegram"; Process="Telegram"; Note="Fast and secure desktop messaging client"; ID="Telegram.TelegramDesktop"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Microsoft Teams"; Process="Teams"; Note="Corporate collaboration and video meetings hub"; ID="Microsoft.Teams"}
     [PSCustomObject]@{Category="💬 Communication"; Name="Slack"; Process="slack"; Note="Team communication and workspace platform"; ID="SlackTechnologies.Slack"}
@@ -117,8 +260,7 @@ $SoftwarePackages = @(
     [PSCustomObject]@{Category="💬 Communication"; Name="Thunderbird"; Process="thunderbird"; Note="Open-source email and calendar client"; ID="Mozilla.Thunderbird"}
     
     # 🎵 Music
-    [PSCustomObject]@{Category="🎵 Music"; Name="Spotify"; Process="Spotify"; Note="Digital music streaming service application"; ID="Spotify.Spotify"}
-    [PSCustomObject]@{Category="🎵 Music"; Name="Apple Music"; Process="AppleMusic"; Note="Official Apple Music native client"; ID="Apple.AppleMusic"}
+    [PSCustomObject]@{Category="🎵 Music"; Name="Apple Music"; Process="AppleMusic"; Note="Official Apple Music native client"; ID="9PFHDD62MXS1"}
     
     # 🎮 Gaming
     [PSCustomObject]@{Category="🎮 Gaming"; Name="Steam"; Process="steam"; Note="Digital distribution storefront for PC gaming"; ID="Valve.Steam"}
@@ -134,15 +276,11 @@ function Wait-TaskEnd {
 }
 
 # --- Module 1 & 2: Software Selection & Single Window Batch Execution ---
-function Assert-Winget {
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { return $false }
-    return $true
-}
-
 function Manage-Software([string]$Action) {
+    # If Assert-Winget fails, it drops an error and returns $false.
+    # The UI screen will NOT open, and it routes safely back to the menu.
     if (-not (Assert-Winget)) { 
-        Write-Host "[✘] Error: Winget is not initialized." -ForegroundColor Red
-        Read-Host "Press Enter to continue"; return 
+        return 
     }
     
     $DisplayList = New-Object System.Collections.ArrayList
@@ -167,7 +305,8 @@ function Manage-Software([string]$Action) {
         foreach ($App in $SelectedApps) {
             Write-Host "  [-] Would execute $Action sequence for: $($App."Application Name")" -ForegroundColor Gray
         }
-        Wait-TaskEnd; return
+        Wait-TaskEnd
+        return
     }
 
     Clear-Host
@@ -187,31 +326,64 @@ function Manage-Software([string]$Action) {
         
         if ($Action -eq "Install") {
             $PayloadCommands += "Write-Host '`n>>> DEPLOYING COMPONENT: $AppName <<<' -ForegroundColor Cyan"
-            $PayloadCommands += "winget install --id '$AppID' --exact --force --include-unknown --accept-package-agreements --accept-source-agreements"
+            $PayloadCommands += "winget install --id '$AppID' --force --include-unknown --accept-package-agreements --accept-source-agreements 2>&1"
         } 
         else {
             if ($ProcName) {
-                $PayloadCommands += "if (Get-Process -Name '$ProcName' -ErrorAction SilentlyContinue) { Write-Host '   [⚠] Killing active environment process ($ProcName)...' -ForegroundColor Yellow; Stop-Process -Name '$ProcName' -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }"
+                $PayloadCommands += @"
+`$procs = Get-Process -Name '$ProcName' -ErrorAction SilentlyContinue
+if (`$procs) {
+    Write-Host '   [⚠] Killing active environment process (`$ProcName)...' -ForegroundColor Yellow
+    foreach (`$proc in `$procs) {
+        try {
+            `$proc.WaitForExit(3000)
+            if (-not `$proc.HasExited) {
+                Stop-Process -Id `$proc.Id -Force -ErrorAction Stop
+            }
+        } catch { }
+    }
+    Start-Sleep -Seconds 1
+}
+"@
             }
             $PayloadCommands += "Write-Host '`n>>> EXTRACTING COMPONENT: $AppName <<<' -ForegroundColor DarkYellow"
-            $PayloadCommands += "winget uninstall --id '$AppID' --exact --force"
+            $PayloadCommands += "winget uninstall --id '$AppID' --force 2>&1"
         }
     }
     
     $PayloadCommands += "Write-Host '`n[+] All requested batch operations completed!' -ForegroundColor Green"
     $PayloadCommands += "Read-Host 'Press Enter to exit this deployment window and return to Master Console'"
     
-    $ExecutionPayloadString = $PayloadCommands -join "; "
-    Write-Host "[*] Spawning single execution host process window..." -ForegroundColor Yellow
-    
-    $ProcessArgs = @(
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-Command", $ExecutionPayloadString
-    )
-    
-    Start-Process powershell.exe -ArgumentList $ProcessArgs -Wait
-    Write-Host "`n[+] Software batch processing engine task complete!" -ForegroundColor Green
+Write-Host "`n[*] Spawning single execution host process window..." -ForegroundColor Gray
+
+    # 1. Establish a secure temporary payload file path
+    $TempPayloadPath = Join-Path $env:TEMP "YairUtilityPayload.ps1"
+
+    # 2. Add an internal pause at the very end of the execution payload so you can read output logs
+    $PayloadCommands += "`nWrite-Host '`n=========================================================' -ForegroundColor Cyan"
+    $PayloadCommands += "`nWrite-Host '[*] Batch deployment execution loop completed.' -ForegroundColor Green"
+    $PayloadCommands += "`nWrite-Host 'Press any key to close this execution host window...' -ForegroundColor Gray"
+    $PayloadCommands += "`n`$null = `$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')"
+
+    # 3. Write the entire massive array string directly to disk using UTF8 encoding
+    $PayloadCommands | Out-File -FilePath $TempPayloadPath -Encoding utf8 -Force
+
+    # 4. Build a tiny, lightweight argument string pointing safely to the file path instead of raw code text
+    $ProcessArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$TempPayloadPath`""
+
+    try {
+        # 5. Fire off the execution window using the file reference (bypasses string length limits)
+        Start-Process powershell.exe -ArgumentList $ProcessArgs -Wait
+    }
+    catch {
+        Write-Error "Critical execution failure: $_"
+    }
+    finally {
+        # 6. Housekeeping: Securely sanitize and erase the temporary file from disk after completion
+        if (Test-Path $TempPayloadPath) {
+            Remove-Item -Path $TempPayloadPath -Force -ErrorAction SilentlyContinue
+        }
+    }    Write-Host "`n[+] Software batch processing engine task complete!" -ForegroundColor Green
     Wait-TaskEnd
 }
 
@@ -242,70 +414,9 @@ function Invoke-Debloat {
         $SubChoice = Read-Host "Enter operational sequence"
         
         switch ($SubChoice.ToUpper()) {
-            '1' {
-                Clear-Host
-                Write-Host "=== Deep Clean Phase 1: UWP Bloatware Package Eradication ===" -ForegroundColor Cyan
-                $Bloat = @("BingNews", "BingWeather", "MicrosoftSolitaireCollection", "TikTok", "Facebook", "Instagram", "XboxApp", "ZuneMusic", "ZuneVideo", "Cortana", "WindowsMaps", "Clipchamp", "DevHome")
-                foreach ($app in $Bloat) {
-                    Write-Host "  Purging package stub: $app... " -NoNewline
-                    if ($Global:IsSimulation) { Write-Host "SIMULATED" -ForegroundColor DarkGray } else {
-                        try {
-                            Get-AppxPackage -AllUsers -Name "*$app*" -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-                            Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object DisplayName -match $app | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
-                            Write-Host "[✔] Cleaned." -ForegroundColor Green
-                        } catch { Write-Host "[✘] Failed." -ForegroundColor Red }
-                    }
-                }
-                Wait-TaskEnd
-            }
-            '2' {
-                Clear-Host
-                Write-Host "=== Deep Clean Phase 2: Telemetry Pipeline Lockdown ===" -ForegroundColor Cyan
-                $Services = @("DiagTrack", "dmwappushservice")
-                foreach ($Svc in $Services) {
-                    Write-Host "  Locking down service: $Svc... " -NoNewline
-                    if ($Global:IsSimulation) { Write-Host "SIMULATED" -ForegroundColor DarkGray } else {
-                        if (Get-Service -Name $Svc -ErrorAction SilentlyContinue) {
-                            Stop-Process -Name $Svc -Force -ErrorAction SilentlyContinue
-                            Stop-Service -Name $Svc -Force -ErrorAction SilentlyContinue
-                            Set-Service -Name $Svc -StartupType Disabled -ErrorAction SilentlyContinue
-                            Write-Host "[✔] Disabled." -ForegroundColor Green
-                        } else { Write-Host "[--] Not present." -ForegroundColor DarkGray }
-                    }
-                }
-                Wait-TaskEnd
-            }
-            '3' {
-                Clear-Host
-                Write-Host "=== Deep Clean Phase 3: Hardware Storage Cache & Trash Purge ===" -ForegroundColor Cyan
-                
-                # Explicit execution layer handling for the local Recycle Bin
-                Write-Host "  Emptying native System Recycle Bin structure... " -NoNewline
-                if ($Global:IsSimulation) { 
-                    Write-Host "SIMULATED" -ForegroundColor DarkGray 
-                } else {
-                    try {
-                        Clear-RecycleBin -Confirm:$false -Force -ErrorAction SilentlyContinue
-                        Write-Host "[✔] Emptied." -ForegroundColor Green
-                    } catch { 
-                        Write-Host "[✔] Nominal (Already empty or locked)." -ForegroundColor DarkGray 
-                    }
-                }
-
-                $Paths = @($env:TEMP, "C:\Windows\Temp", "C:\Windows\Prefetch")
-                foreach ($p in $Paths) {
-                    Write-Host "  Processing path instance directory: $p... " -NoNewline
-                    if ($Global:IsSimulation) { Write-Host "SIMULATED" -ForegroundColor DarkGray } else {
-                        try {
-                            if (Test-Path $p) {
-                                Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-                                Write-Host "[✔] Cleared." -ForegroundColor Green
-                            } else { Write-Host "[--] Not Found." -ForegroundColor DarkGray }
-                        } catch { Write-Host "[⚠] Partial lock (Active files skipped)." -ForegroundColor DarkYellow }
-                    }
-                }
-                Wait-TaskEnd
-            }
+            '1' { Invoke-BloatwareRemoval }
+            '2' { Invoke-TelemetryDisable }
+            '3' { Invoke-TempClear }
             'B' { return }
             Default {
                 Write-Host "[✘] Invalid sub-routine choice selection." -ForegroundColor Red
@@ -313,6 +424,180 @@ function Invoke-Debloat {
             }
         }
     }
+}
+
+# --- Enhanced Bloatware Removal ---
+function Invoke-BloatwareRemoval {
+    Clear-Host
+    Write-Host "=== Deep Clean Phase 1: UWP Bloatware Package Eradication ===" -ForegroundColor Cyan
+    
+    # Enhanced list with better pattern matching
+    $Bloat = @(
+        "BingNews",
+        "BingWeather",
+        "MicrosoftSolitaireCollection",
+        "TikTok",
+        "Facebook",
+        "Instagram",
+        "XboxApp",
+        "Xbox",
+        "ZuneMusic",
+        "ZuneVideo",
+        "Cortana",
+        "WindowsMaps",
+        "Clipchamp",
+        "DevHome",
+        "Microsoft.549981C3F5F10"  # Cortana GUID
+    )
+    
+    foreach ($app in $Bloat) {
+        Write-Host "  Purging package stub: $app... " -NoNewline
+        
+        if ($Global:IsSimulation) {
+            Write-Host "SIMULATED" -ForegroundColor DarkGray
+            continue
+        }
+        
+        $removed = $false
+        
+        try {
+            # Method 1: Remove AppxPackage (user-installed)
+            $packages = Get-AppxPackage -AllUsers -Name "*$app*" -ErrorAction SilentlyContinue
+            if ($packages) {
+                foreach ($package in $packages) {
+                    try {
+                        Remove-AppxPackage -Package $package.PackageFullName -AllUsers -ErrorAction Stop | Out-Null
+                        $removed = $true
+                    }
+                    catch {
+                        # Silent continue to try next method
+                    }
+                }
+            }
+            
+            # Method 2: Remove AppxProvisionedPackage (system-provisioned)
+            $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | 
+                Where-Object DisplayName -like "*$app*"
+            if ($provisioned) {
+                foreach ($prov in $provisioned) {
+                    try {
+                        Remove-AppxProvisionedPackage -PackageName $prov.PackageName -Online -ErrorAction Stop | Out-Null
+                        $removed = $true
+                    }
+                    catch {
+                        # Continue trying other methods
+                    }
+                }
+            }
+            
+            # Method 3: Registry removal for Cortana specifically
+            if ($app -like "*Cortana*" -or $app -like "*549981C3F5F10*") {
+                try {
+                    $regPaths = @(
+                        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                        "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
+                    )
+                    foreach ($regPath in $regPaths) {
+                        if (Test-Path $regPath) {
+                            Set-ItemProperty -Path $regPath -Name "DisableSearchBoxSuggestions" -Value 1 -ErrorAction SilentlyContinue
+                        }
+                    }
+                    $removed = $true
+                } catch { }
+            }
+            
+            if ($removed) {
+                Write-Host "[✔] Cleaned." -ForegroundColor Green
+            } else {
+                Write-Host "[--] Not found or already removed." -ForegroundColor DarkGray
+            }
+        }
+        catch {
+            Write-Host "[⚠] Partial removal." -ForegroundColor Yellow
+        }
+    }
+    
+    Write-Host "`n[*] Cortana Specific Removal:" -ForegroundColor Cyan
+    try {
+        # Additional Cortana disabling
+        $cortanaPath = "$env:LOCALAPPDATA\Packages\Microsoft.549981C3F5F10_*"
+        $cortanaFolders = Get-Item -Path $cortanaPath -ErrorAction SilentlyContinue
+        
+        if ($cortanaFolders) {
+            foreach ($folder in $cortanaFolders) {
+                try {
+                    Remove-Item -Path $folder.FullName -Recurse -Force -ErrorAction Stop
+                    Write-Host "    [✔] Removed Cortana folder: $($folder.Name)" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "    [⚠] Could not remove folder: $($folder.Name)" -ForegroundColor Yellow
+                }
+            }
+        }
+        else {
+            Write-Host "    [--] Cortana folder not found" -ForegroundColor Gray
+        }
+    }
+    catch {
+        Write-Host "    [!] Error: $_" -ForegroundColor Yellow
+    }
+    
+    Wait-TaskEnd
+}
+
+# --- Telemetry Disable ---
+function Invoke-TelemetryDisable {
+    Clear-Host
+    Write-Host "=== Deep Clean Phase 2: Telemetry Pipeline Lockdown ===" -ForegroundColor Cyan
+    $Services = @("DiagTrack", "dmwappushservice")
+    foreach ($Svc in $Services) {
+        Write-Host "  Locking down service: $Svc... " -NoNewline
+        if ($Global:IsSimulation) { Write-Host "SIMULATED" -ForegroundColor DarkGray } else {
+            if (Get-Service -Name $Svc -ErrorAction SilentlyContinue) {
+                try {
+                    Stop-Service -Name $Svc -Force -NoWait -ErrorAction Stop
+                    Set-Service -Name $Svc -StartupType Disabled -ErrorAction Stop
+                    Write-Host "[✔] Disabled." -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "[✘] Failed." -ForegroundColor Red
+                }
+            } else { Write-Host "[--] Not present." -ForegroundColor DarkGray }
+        }
+    }
+    Wait-TaskEnd
+}
+
+# --- Temp Clear ---
+function Invoke-TempClear {
+    Clear-Host
+    Write-Host "=== Deep Clean Phase 3: Hardware Storage Cache & Trash Purge ===" -ForegroundColor Cyan
+    
+    Write-Host "  Emptying native System Recycle Bin structure... " -NoNewline
+    if ($Global:IsSimulation) { 
+        Write-Host "SIMULATED" -ForegroundColor DarkGray 
+    } else {
+        try {
+            Clear-RecycleBin -Confirm:$false -Force -ErrorAction SilentlyContinue
+            Write-Host "[✔] Emptied." -ForegroundColor Green
+        } catch { 
+            Write-Host "[✔] Nominal (Already empty or locked)." -ForegroundColor DarkGray 
+        }
+    }
+
+    $Paths = @($env:TEMP, "C:\Windows\Temp", "C:\Windows\Prefetch")
+    foreach ($p in $Paths) {
+        Write-Host "  Processing path instance directory: $p... " -NoNewline
+        if ($Global:IsSimulation) { Write-Host "SIMULATED" -ForegroundColor DarkGray } else {
+            try {
+                if (Test-Path $p) {
+                    Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Host "[✔] Cleared." -ForegroundColor Green
+                } else { Write-Host "[--] Not Found." -ForegroundColor DarkGray }
+            } catch { Write-Host "[⚠] Partial lock (Active files skipped)." -ForegroundColor DarkYellow }
+        }
+    }
+    Wait-TaskEnd
 }
 
 # --- Module Format Helper ---
@@ -326,12 +611,13 @@ function Write-DiagResult ($Component, $Status, $Details) {
 function Invoke-Diagnostics {
     Clear-Host
     Write-Host "=== Integrated System Metrics Dashboard ===" -ForegroundColor Cyan
-    Write-Host "Node: $($env:COMPUTERNAME) | Context: $($env:USERNAME)`n" -ForegroundColor DarkGray
+    Write-Host "Node: $($env:COMPUTERNAME) | Context: $($env:USERNAME)`n" -ForegroundColor Yellow
     
     if ($Global:IsSimulation) {
         Write-Host "  [SIMULATION MODE] Testing dashboard display logic...`n" -ForegroundColor DarkGray
         Write-DiagResult "Storage (C:)" "OK" "Healthy (67% free)"
-        Wait-TaskEnd; return
+        Wait-TaskEnd
+        return
     }
 
     try {
