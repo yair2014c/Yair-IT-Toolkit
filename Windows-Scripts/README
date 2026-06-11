@@ -1,0 +1,11 @@
+1 - Clean-Temp.ps1 - Purges user and system temporary directories to quickly reclaim disk space, automatically skipping any files that are currently locked or in use by running processes.
+
+2 - Get-SystemCrashReport.ps1.ps1 - Scans Windows System and Application event logs from the last 48 hours to isolate and display critical hardware failures, unexpected kernel shutdowns, and application freezes or crashes for troubleshooting.
+
+3 - Secure-Updates.ps1 - Safely manages system patching by automatically creating a system restore point, searching for missing critical or security updates through native Windows COM interfaces, installing them, and outputting a post-update hotfix report.
+
+4 - Storage-Full-Santizier.ps1 - Executes a deep system storage cleanup by deleting windows update caches (SoftwareDistribution), Delivery Optimization data, and temporary files, while running DISM component store compression, emptying the Recycle Bin and resetting WSL states to free up memory.
+
+5 - System-Full-Diagnostic.ps1 - Generates a complete, color-coded health dashboard that checks system resources, storage volume space, drive SMART statuses, laptop battery wear, active network adapter capabilities, internet/DNS connectivity, and flags stopped automatic services alongside recent critical crash logs with actionable fix recommendations.
+
+6 - SystemInfo-Check.ps1 - A lightweight utility that quickly fetches and outputs basic operating system data, including the exact OS name, build version, and computer hardware model.
