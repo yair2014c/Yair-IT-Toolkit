@@ -1,4 +1,4 @@
-Security-scripts Overview
+Security-Scripts Overview
 
 1- Security-Full-Diagnostic.ps1 - Runs a security baseline audit on the system, checking Microsoft Defender configuration, real-time protection status, and signature age, while highlighting vulnerabilities with direct fix recommendations.
 
