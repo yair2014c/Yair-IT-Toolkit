@@ -1,5 +1,8 @@
 Yair Utility Tool Overview
 
+Run-Tool.bat — The Launcher.
+A minimal one-liner that launches YairUtility.ps1 from its own folder with ExecutionPolicy Bypass. This is what the end user double-clicks — no PowerShell knowledge needed.
+
 YairUtility.ps1 — The Main Tool.
 This is the heart of my project. An easy to use and access, a console-based Windows management utility that runs as Administrator and covers 9 operational modules through a numbered 
 menu
@@ -43,10 +46,6 @@ A dry-run toggle — every destructive or system-modifying action is skipped and
 Winget Guard.
 
 Before any install/uninstall operation, it runs a 3-step validation: checks if winget exists → tries to install it if missing (AppX path refresh or GitHub download) → updates it. If winget is broken, the software menu never opens, and the user gets a clear fix instruction.
-
-
-Run-Tool.bat — The Launcher.
-A minimal one-liner that launches YairUtility.ps1 from its own folder with ExecutionPolicy Bypass. This is what the end user double-clicks — no PowerShell knowledge needed.
 
 
 Winget-SoftwareInstaller-Fix.ps1 + Winget-SoftwareInstaller-Fix.bat — The Deep Winget Repair.
