@@ -1,3 +1,5 @@
+Security-scripts Overview
+
 1- Security-Full-Diagnostic.ps1 - Runs a security baseline audit on the system, checking Microsoft Defender configuration, real-time protection status, and signature age, while highlighting vulnerabilities with direct fix recommendations.
 
 2- Security-Identity-Auditor.ps1 - Audits the local SAM database to identify privilege risks, flag accounts with long-term inactivity (stale users), map out members of the Local Administrators group, and verify local password policy strength.
