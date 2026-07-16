@@ -1,19 +1,14 @@
 Network-Diagnostic Overview
 
-Full-Network-Diagnostic.ps1 
-What it does: Audits the active adapter interface, verifies drivers, validates network configurations, and provides color-coded fix recommendations.
+1 - Full-Network-Diagnostic.ps1 - Audits the active adapter interface, verifies drivers, validates network configurations, and provides color-coded fix recommendations.
 
-Get-ActiveConnection.ps1 
-What it does: Maps active network connections directly to the application process using them and opens a searchable GUI table (Out-GridView).
+2 - Get-ActiveConnection.ps1 - Maps active network connections directly to the application process using them and opens a searchable GUI table (Out-GridView).
 
-Get-NetworkProfile.ps1 
-What it does: Tracks connection SSIDs, protocol binding (IPv4/IPv6), and network category types (Public vs. Private) to rule out firewall blocking.
+3 - Get-NetworkProfile.ps1 - Tracks connection SSIDs, protocol binding (IPv4/IPv6), and network category types (Public vs. Private) to rule out firewall blocking.
 
-Get-NetworkSummary.ps1
-What it does: Extracts local IP addresses, the Default Gateway, external public IP routing, and real-time data bandwidth usage (in MB).
+4 - Get-NetworkSummary.ps1 - Extracts local IP addresses, the Default Gateway, external public IP routing, and real-time data bandwidth usage (in MB).
 
-Triage-connection.ps1 
-What it does: Tests target latency layers (Router ➔ DNS ➔ WAN Internet ➔ Servers) and parses exact native hardware/timeout error codes when pings
+5 - Triage-connection.ps1 - Tests target latency layers (Router ➔ DNS ➔ WAN Internet ➔ Servers) and parses exact native hardware/timeout error codes when pings
 fail.
 
  Quick Tips:
