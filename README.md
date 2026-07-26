@@ -37,7 +37,3 @@ License
 - MIT (see LICENSE)
 
 If you want the previous full README text preserved, see: `docs/OLD_README.md` (a verbatim copy of the original README).  
-
----
-
-If you want me to also open a release and tag v1.1, tell me and I will create a draft release text you can paste into GitHub Releases.
