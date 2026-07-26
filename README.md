@@ -266,13 +266,18 @@ Beyond the main tool, you also get standalone scripts for specific tasks:
 
 ## 📸 Screenshots
 
-> Coming soon! Screenshots showing:
-> - Menu-Engine main interface
-> - App installation grid interface
-> - System health dashboard output
-> - Debloat submenu options
-> - Security audit results
-> - Network diagnostics output
+<img width="1470" height="978" alt="main menu" src="https://github.com/user-attachments/assets/25ac87ed-5ffd-4ef4-a7fc-d860c959e02f" />
+<img width="1448" height="733" alt="winget" src="https://github.com/user-attachments/assets/ad6d8f15-a012-4207-932e-7f4839ea9964" />
+<img width="1405" height="506" alt="health" src="https://github.com/user-attachments/assets/96f83e3f-688f-44f7-80b3-29e36029ff25" />
+<img width="1312" height="491" alt="deploat" src="https://github.com/user-attachments/assets/b612f70c-cc90-4619-917d-8433dcb5b927" />
+<img width="1141" height="267" alt="security" src="https://github.com/user-attachments/assets/48705e8d-18c3-4397-8cc6-0428f8ae3bda" />
+
+
+
+
+
+
+
 
 ---
 
