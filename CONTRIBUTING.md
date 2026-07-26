@@ -14,6 +14,3 @@ Guidelines
 
 Issue reports
 - Provide steps to reproduce, platform details (Windows version, PowerShell version), and relevant script names.
-
-Code style
-- Use clear comments and follow PowerShell best practices (verb-noun functions, error handling, explicit CmdletBinding where appropriate).
