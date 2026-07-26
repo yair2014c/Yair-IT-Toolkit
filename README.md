@@ -1,11 +1,19 @@
 # Yair IT Toolkit
 
-A comprehensive Windows system administration tool that combines software management, security auditing, system diagnostics, and maintenance all in one easy-to-use utility. Built for IT professionals and power users who want complete control over their Windows environment.
-
+A comprehensive Windows system administration tool that combines software management, security auditing, system diagnostics, and maintenance all in one easy-to-use utility. Built for IT professionals.
 
 <img width="687" height="338" alt="image" src="https://github.com/user-attachments/assets/20077072-3053-4280-ad88-a79c7228f93f" />
 <img width="807" height="486" alt="צילום מסך 2026-07-26 185939" src="https://github.com/user-attachments/assets/422e35e1-291e-4a0e-a1a5-784fb104342a" />
 
+---
+
+## 📑 Quick Navigation
+- [What You Get](#-what-you-get)
+- [Quick Start](#-quick-start)
+- [System Requirements](#-system-requirements)
+- [Main Menu](#--main-menu-structure)
+- [How to Use](#-how-to-use-step-by-step-examples)
+- [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -71,6 +79,18 @@ That's it. The tool will:
 - Guide you through the rest
 
 **Note**: Administrator access is required for all features. You'll see UAC prompts when running operations—this is normal and expected.
+
+---
+
+## 🎯 Which Tool Should I Use?
+
+| Problem | Solution |
+|---------|----------|
+| **PC is running slow** | Menu `[4]` → `[5]` (Health Check) |
+| **Suspicious activity/malware suspected** | Menu `[4]` → `[8]` (Incident Scan) |
+| **Need to free up disk space** | Menu `[4]` → `[3]` (Debloat & Cleanup) |
+| **Network problems** | Menu `[1]` (Network Scripts) |
+| **Want to test before making changes** | Menu `[4]` → `[S]` (Simulation Mode) |
 
 ---
 
@@ -272,13 +292,6 @@ Beyond the main tool, you also get standalone scripts for specific tasks:
 <img width="1312" height="491" alt="deploat" src="https://github.com/user-attachments/assets/b612f70c-cc90-4619-917d-8433dcb5b927" />
 <img width="1141" height="267" alt="security" src="https://github.com/user-attachments/assets/48705e8d-18c3-4397-8cc6-0428f8ae3bda" />
 
-
-
-
-
-
-
-
 ---
 
 ## ⚠️ Important Notes
@@ -415,7 +428,7 @@ Found a bug or have a feature request?
 
 ---
 
-**Last Updated**: 2026-07-16  
+**Last Updated**: 2026-07-26  
 **Version**: 1.1 (Menu-Engine Integration)
 
 ---
