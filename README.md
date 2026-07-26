@@ -2,6 +2,11 @@
 
 A comprehensive Windows system administration tool that combines software management, security auditing, system diagnostics, and maintenance all in one easy-to-use utility. Built for IT professionals and power users who want complete control over their Windows environment.
 
+
+<img width="687" height="338" alt="image" src="https://github.com/user-attachments/assets/20077072-3053-4280-ad88-a79c7228f93f" />
+<img width="807" height="486" alt="צילום מסך 2026-07-26 185939" src="https://github.com/user-attachments/assets/422e35e1-291e-4a0e-a1a5-784fb104342a" />
+
+
 ---
 
 ## 🎯 What You Get
