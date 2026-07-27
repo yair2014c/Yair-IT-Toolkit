@@ -1,8 +1,8 @@
 # Yair IT Toolkit
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.1-green.svg)](VERSION)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A compact, menu-driven PowerShell toolkit for Windows system administration: package management (WinGet), diagnostics, security auditing, storage sanitization, and maintenance — intended for IT professionals and system administrators.
+A compact, menu-driven PowerShell toolkit for Windows system administration: package management (WinGet), diagnostics, security auditing, storage sanitization, and maintenance — intended for IT professionals.
 
 Why this repo exists
 - Fast, single-launch console UI for common Windows admin tasks.
@@ -18,10 +18,6 @@ Important safety notes
 - Use Simulation Mode (`[S]`) to dry-run destructive actions before actually applying them.
 - The toolkit will create a restore point before major changes, but you should back up important data first.
 
-What changed in this update
-- README trimmed to a concise front-page and moved long reference material into `docs/` to improve first-time readability.
-- Added CHANGELOG, SECURITY, CONTRIBUTING, and a VERSION file.
-
 Where to find detailed docs and the full catalog
 - Detailed usage, full app catalog, and troubleshooting moved to docs/:
   - docs/USAGE.md — expanded usage & examples
@@ -36,4 +32,4 @@ Files of interest
 License
 - MIT (see LICENSE)
 
-If you want the previous full README text preserved, see: `docs/OLD_README.md` (a verbatim copy of the original README).  
+If you want the previous full README text preserved, see: `docs/OLD_README.md` (a verbatim copy of the original README).
