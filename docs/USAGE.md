@@ -2,6 +2,11 @@
 
 This file contains the expanded quick-start instructions and examples. If you're new, follow the Quick Start on the main README and use Simulation Mode first.
 
+<img width="687" height="338" alt="Toolkit-launcher" src="https://github.com/user-attachments/assets/6092af94-bc08-4d7a-9c94-f95af1b7ec69" />
+<img width="807" height="486" alt="main-Toolkit" src="https://github.com/user-attachments/assets/978d0b01-9678-40e3-bbb4-56de06613f96" />
+
+
+
 Running the toolkit
 1. Clone the repo:
 
