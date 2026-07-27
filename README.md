@@ -4,6 +4,10 @@
 
 A compact, menu-driven PowerShell toolkit for Windows system administration: package management (WinGet), diagnostics, security auditing, storage sanitization, and maintenance — intended for IT professionals.
 
+![Toolkit-launcher](
+
+
+
 Why this repo exists
 - Fast, single-launch console UI for common Windows admin tasks.
 - Focus on safe defaults (Simulation Mode) and automated WinGet repair helpers for problematic environments.
